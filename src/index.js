@@ -18,5 +18,5 @@ const button = body.append('button')
         .text('Счет: 0').attr('id', 'score');
 
       init(WORKSPACE_ID);
-    }, 200);
+    }, 300);
   });

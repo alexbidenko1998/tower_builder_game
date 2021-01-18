@@ -1,12 +1,17 @@
 import gsap from "gsap";
+import MotionPathPlugin from "gsap/MotionPathPlugin";
 import { select } from "d3";
 import initClouds from "./initClouds";
+import {randomColor} from "./utils";
+import {BLOCK_HEIGHT, BLOCK_WIDTH} from "./consts";
+import initBoom from "./initBoom";
 
-const BLOCK_WIDTH = 160;
-const BLOCK_HEIGHT = 160;
+gsap.registerPlugin(MotionPathPlugin);
+
+let s;
 
 let towerHeight = 20;
-let deltaHeight = -BLOCK_HEIGHT;
+let deltaHeight = 0;
 let towerGroup;
 
 let lastLeft = window.innerWidth / 2;
@@ -14,14 +19,13 @@ let crashDelta = 0;
 
 let health = 3;
 
-const randomColor = () => `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
-
 const dropBlock = (s, createdBlock) => {
   if (select('#createdBlock').style('display') !== 'none') {
     const position = createdBlock.node.getBoundingClientRect();
     const clone = createdBlock.clone().attr({
       x: position.x,
       y: position.y,
+      zIndex: 10,
     });
     s.append(clone);
     select(clone.node).style('transform-origin', `${BLOCK_WIDTH / 2}px ${BLOCK_WIDTH / 2}px`);
@@ -41,16 +45,18 @@ const dropBlock = (s, createdBlock) => {
           tween.kill();
           towerHeight += BLOCK_HEIGHT;
           towerGroup.append(clone);
-          deltaHeight += BLOCK_HEIGHT;
-          if (Math.abs(position.x + BLOCK_WIDTH / 2 - lastLeft) < BLOCK_WIDTH / 10) clone.attr({x: lastLeft - BLOCK_WIDTH / 2});
-          else {
+          if (Math.abs(position.x + BLOCK_WIDTH / 2 - lastLeft) < BLOCK_WIDTH / 25) {
+            clone.attr({x: lastLeft - BLOCK_WIDTH / 2});
+            // initBoom(s, towerGroup, lastLeft, position.y);
+          } else {
             crashDelta += Math.abs(position.x + BLOCK_WIDTH / 2 - lastLeft);
             lastLeft = position.x + BLOCK_WIDTH / 2;
           }
           if (towerHeight + BLOCK_HEIGHT >= window.innerHeight / 2) {
+            deltaHeight += BLOCK_HEIGHT;
             gsap.set(clone.node, {rotation: 0});
             clone.attr({
-              y: `-=${deltaHeight - BLOCK_HEIGHT}`
+              y: `+=${BLOCK_HEIGHT - deltaHeight}`
             });
             gsap.to('#tower', {duration: 3, y: deltaHeight});
             towerHeight -= BLOCK_HEIGHT;
@@ -124,7 +130,7 @@ const initHealth = (s) => {
 };
 
 export default (id) => {
-  const s = Snap(`#${id}`);
+  s = Snap(`#${id}`);
 
   initClouds(s);
   const createdBlock = initMachine(s);
